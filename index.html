@@ -460,6 +460,40 @@
         ::-webkit-scrollbar-thumb:hover {
             background: var(--accent-secondary);
         }
+
+        /* Camera Selector */
+        .camera-selector-wrapper {
+            display: flex;
+            align-items: center;
+        }
+
+        .camera-select {
+            padding: 8px 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .camera-select:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent-primary);
+        }
+
+        .camera-select:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .camera-select option {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
     </style>
 </head>
 
@@ -482,6 +516,12 @@
         <div id="scanner" class="tab-content active">
             <div class="glass-card">
                 <div class="control-bar">
+                    <div class="camera-selector-wrapper">
+                        <label for="cameraSelect" style="margin-right: 10px; color: var(--text-secondary);">카메라:</label>
+                        <select id="cameraSelect" class="camera-select">
+                            <option value="">카메라 검색 중...</option>
+                        </select>
+                    </div>
                     <div class="switch-container">
                         <span>자동 열기</span>
                         <label class="switch">
@@ -565,6 +605,9 @@
         let scannedData = null;
         let logoImage = null;
         let generatedQRDataUrl = null;
+        let currentStream = null;
+        let availableCameras = [];
+        let selectedCameraId = null;
 
         // Tab Switching
         function switchTab(tab, event) {
@@ -590,13 +633,59 @@
         }
 
         // Scanner Functions
+        async function enumerateCameras() {
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                availableCameras = devices.filter(device => device.kind === 'videoinput');
+
+                const cameraSelect = document.getElementById('cameraSelect');
+                cameraSelect.innerHTML = '';
+
+                if (availableCameras.length === 0) {
+                    cameraSelect.innerHTML = '<option value="">카메라 없음</option>';
+                    return;
+                }
+
+                availableCameras.forEach((camera, index) => {
+                    const option = document.createElement('option');
+                    option.value = camera.deviceId;
+                    option.text = camera.label || `Camera ${index + 1}`;
+                    cameraSelect.appendChild(option);
+                });
+
+                // Auto-select first camera
+                if (availableCameras.length > 0) {
+                    selectedCameraId = availableCameras[0].deviceId;
+                    cameraSelect.value = selectedCameraId;
+                }
+            } catch (err) {
+                console.error('Error enumerating cameras:', err);
+            }
+        }
+
         async function startCamera() {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: 'environment' }
-                });
+                // Stop existing stream
+                if (currentStream) {
+                    currentStream.getTracks().forEach(track => track.stop());
+                }
+
+                const constraints = {
+                    video: selectedCameraId ?
+                        { deviceId: { exact: selectedCameraId } } :
+                        { facingMode: 'environment' }
+                };
+
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                currentStream = stream;
                 video.srcObject = stream;
                 document.getElementById('videoOverlay').style.display = 'none';
+
+                // Enumerate cameras after getting permission
+                if (availableCameras.length === 0) {
+                    await enumerateCameras();
+                }
+
                 requestAnimationFrame(scanQR);
             } catch (err) {
                 console.error('Camera Error:', err);
@@ -605,8 +694,11 @@
         }
 
         function stopCamera() {
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+                currentStream = null;
+            }
             if (video.srcObject) {
-                video.srcObject.getTracks().forEach(track => track.stop());
                 video.srcObject = null;
             }
         }
@@ -822,8 +914,17 @@
         }
 
         // Initialize
-        window.addEventListener('load', () => {
-            startCamera();
+        window.addEventListener('load', async () => {
+            // Request camera permission and enumerate devices
+            await startCamera();
+        });
+
+        // Camera selection change handler
+        document.getElementById('cameraSelect').addEventListener('change', async (e) => {
+            selectedCameraId = e.target.value;
+            if (selectedCameraId) {
+                await startCamera();
+            }
         });
 
         // Cleanup on page unload
