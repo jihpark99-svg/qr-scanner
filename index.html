@@ -726,6 +726,8 @@
                     const ctx = finalCanvas.getContext('2d');
                     ctx.drawImage(sourceCanvas, 0, 0);
 
+                    // Temporarily disabled logo for testing
+                    /*
                     if (this.logoImage && this.logoImage.complete) {
                         const logoWidth = 100;  // Reduced for better scanning
                         const logoHeight = 100; // Square logo for reliability
@@ -738,6 +740,7 @@
 
                         ctx.drawImage(this.logoImage, x, y, logoWidth, logoHeight);
                     }
+                    */
 
                     this.generatedQRDataUrl = finalCanvas.toDataURL('image/png');
                     const preview = document.getElementById('qrPreview');
