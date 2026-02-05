@@ -205,6 +205,7 @@
         }
 
         /* Buttons */
+        /* Buttons */
         .btn-group {
             display: flex;
             gap: 10px;
@@ -218,11 +219,18 @@
             border: none;
             font-weight: 600;
             cursor: pointer;
-            transition: transform 0.2s, opacity 0.2s;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 6px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
         }
 
         .btn:active {
@@ -232,17 +240,25 @@
         .btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
 
         .btn-primary {
             background: var(--primary-color);
             color: white;
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
         }
 
         .btn-secondary {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.15);
+            /* Brighter for visibility */
             color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.25);
         }
 
         .btn-success {
@@ -252,30 +268,30 @@
 
         .btn-full {
             width: 100%;
-            margin-top: 12px;
+            margin-top: 10px;
         }
 
-        /* Generator */
+        /* Generator Compact Layout */
         .input-group {
-            margin-bottom: 20px;
+            margin-bottom: 12px;
         }
 
         label {
             display: block;
-            margin-bottom: 8px;
-            font-size: 14px;
+            margin-bottom: 4px;
+            font-size: 13px;
             color: var(--text-secondary);
         }
 
         input[type="text"],
         input[type="color"] {
             width: 100%;
-            padding: 14px;
+            padding: 10px;
             background: rgba(0, 0, 0, 0.2);
             border: 1px solid var(--border-color);
             border-radius: 12px;
             color: white;
-            font-size: 16px;
+            font-size: 14px;
             outline: none;
         }
 
@@ -285,7 +301,7 @@
 
         input[type="color"] {
             padding: 4px;
-            height: 48px;
+            height: 42px;
             cursor: pointer;
         }
 
@@ -317,12 +333,13 @@
             align-items: center;
             justify-content: center;
             width: 100%;
-            padding: 14px;
+            padding: 10px;
             border: 2px dashed var(--border-color);
             border-radius: 12px;
             color: var(--text-secondary);
             cursor: pointer;
             transition: all 0.3s;
+            font-size: 13px;
         }
 
         .file-upload-label:hover {
@@ -339,23 +356,22 @@
         .preview-area {
             background: white;
             border-radius: 16px;
-            padding: 24px;
+            padding: 16px;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 250px;
-            margin-bottom: 20px;
+            min-height: 180px;
+            margin-bottom: 12px;
         }
 
         #qrPreview {
             max-width: 100%;
-            max-height: 250px;
-            /* Limit height to keep buttons visible */
+            max-height: 200px;
+            /* Reduced height */
             width: auto;
             height: auto;
             object-fit: contain;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            /* Optional: add subtle shadow */
             border-radius: 8px;
         }
 
@@ -365,17 +381,18 @@
         }
 
         .placeholder p {
-            margin-top: 8px;
-            font-size: 14px;
+            margin-top: 4px;
+            font-size: 13px;
         }
 
         .placeholder p:first-child {
-            font-size: 48px;
+            font-size: 32px;
         }
 
-        .action-buttons {
+        .action-row {
             display: flex;
             gap: 10px;
+            margin-top: 10px;
         }
 
         /* Footer */
@@ -459,12 +476,13 @@
                 <img id="qrPreview" style="display: none;">
             </div>
 
-            <button class="btn btn-primary btn-full" style="margin-bottom: 10px;">✨ QR 코드 생성하기</button>
-
-            <div class="action-buttons">
-                <button class="btn btn-success btn-full" id="saveBtn" disabled>💾 이미지 저장</button>
-                <button class="btn btn-secondary btn-full" id="resetBtn">🔄 초기화</button>
+            <!-- Compact Action Buttons -->
+            <div class="action-row">
+                <button class="btn btn-primary" onclick="app.generator.generate()">✨ 생성</button>
+                <button class="btn btn-secondary" id="resetBtn">🔄 초기화</button>
             </div>
+
+            <button class="btn btn-success btn-full" id="saveBtn" disabled>💾 이미지 저장</button>
         </div>
 
         <div class="footer">
@@ -709,11 +727,14 @@
                     ctx.drawImage(sourceCanvas, 0, 0);
 
                     if (this.logoImage && this.logoImage.complete) {
-                        const logoSize = 80;
+                        const logoSize = 160; // Doubled size (was 80)
                         const x = (400 - logoSize) / 2;
                         const y = (400 - logoSize) / 2;
+
+                        // White background for logo
                         ctx.fillStyle = 'white';
                         ctx.fillRect(x - 5, y - 5, logoSize + 10, logoSize + 10);
+
                         ctx.drawImage(this.logoImage, x, y, logoSize, logoSize);
                     }
 
@@ -749,7 +770,11 @@
                 document.getElementById('logoLabel').classList.remove('active');
                 this.generatedQRDataUrl = null;
                 document.getElementById('qrPreview').style.display = 'none';
-                document.getElementById('previewPlaceholder').style.display = 'block';
+
+                const placeholder = document.getElementById('previewPlaceholder');
+                placeholder.innerHTML = '<p>📱</p><p>내용을 입력하고 생성 버튼을 누르세요</p>';
+                placeholder.style.display = 'block';
+
                 document.getElementById('saveBtn').disabled = true;
             }
         }
