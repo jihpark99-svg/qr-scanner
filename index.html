@@ -875,13 +875,14 @@
             const color = document.getElementById('qrColor').value;
 
             // Show loading state
-            const generateBtn = event.target;
-            const originalText = generateBtn.textContent;
+            const generateBtn = document.querySelector('.btn-primary');
             generateBtn.disabled = true;
             generateBtn.textContent = '⏳ 생성 중...';
             document.getElementById('previewPlaceholder').innerHTML = '<p>⏳</p><p>QR 코드 생성 중...</p>';
 
             try {
+                console.log('Generating QR code for:', text);
+
                 // Generate QR code
                 const qrCanvas = document.createElement('canvas');
                 await QRCode.toCanvas(qrCanvas, text, {
@@ -895,7 +896,7 @@
                 });
 
                 // If logo exists, add it to the center
-                if (logoImage) {
+                if (logoImage && logoImage.complete) {
                     const ctx = qrCanvas.getContext('2d');
                     const logoSize = qrCanvas.width * 0.2;
                     const x = (qrCanvas.width - logoSize) / 2;
@@ -917,13 +918,14 @@
                 document.getElementById('previewPlaceholder').style.display = 'none';
                 document.getElementById('saveBtn').disabled = false;
 
+                console.log('QR code generated successfully');
+
             } catch (error) {
                 console.error('QR Generation Error:', error);
-                alert('QR 코드 생성 중 오류가 발생했습니다.');
+                alert('QR 코드 생성 중 오류가 발생했습니다: ' + error.message);
                 document.getElementById('previewPlaceholder').innerHTML = '<p>📱</p><p>내용을 입력하고 생성 버튼을 누르세요</p>';
             } finally {
                 // Reset button state
-                const generateBtn = document.querySelector('.btn-primary');
                 generateBtn.disabled = false;
                 generateBtn.textContent = '✨ QR 코드 생성하기';
             }
