@@ -349,7 +349,14 @@
 
         #qrPreview {
             max-width: 100%;
+            max-height: 250px;
+            /* Limit height to keep buttons visible */
+            width: auto;
             height: auto;
+            object-fit: contain;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            /* Optional: add subtle shadow */
+            border-radius: 8px;
         }
 
         .placeholder {
