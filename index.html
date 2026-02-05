@@ -665,6 +665,8 @@
 
         async function startCamera() {
             try {
+                console.log('Starting camera...');
+
                 // Stop existing stream
                 if (currentStream) {
                     currentStream.getTracks().forEach(track => track.stop());
@@ -679,17 +681,30 @@
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 currentStream = stream;
                 video.srcObject = stream;
-                document.getElementById('videoOverlay').style.display = 'none';
+
+                // Wait for video to be ready
+                video.onloadedmetadata = () => {
+                    console.log('Video ready, starting scan loop');
+                    video.play();
+                    document.getElementById('videoOverlay').style.display = 'none';
+                    document.getElementById('scanStatus').textContent = '스캔 진행 중';
+
+                    // Reset scanning state
+                    scanning = true;
+                    scannedData = null;
+
+                    // Start the scan loop
+                    requestAnimationFrame(scanQR);
+                };
 
                 // Enumerate cameras after getting permission
                 if (availableCameras.length === 0) {
                     await enumerateCameras();
                 }
-
-                requestAnimationFrame(scanQR);
             } catch (err) {
                 console.error('Camera Error:', err);
                 document.getElementById('videoOverlay').innerHTML = '<p>⚠️ 카메라 접근 실패<br>권한을 확인해주세요</p>';
+                document.getElementById('scanStatus').textContent = '카메라 오류';
             }
         }
 
@@ -704,7 +719,14 @@
         }
 
         function scanQR() {
-            if (!scanning || video.readyState !== video.HAVE_ENOUGH_DATA) {
+            // Continue scanning loop even if not ready
+            if (!scanning) {
+                // Scanning stopped by user
+                return;
+            }
+
+            if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+                // Video not ready yet, try again
                 requestAnimationFrame(scanQR);
                 return;
             }
@@ -717,9 +739,12 @@
             const code = jsQR(imageData.data, imageData.width, imageData.height);
 
             if (code) {
+                console.log('QR Code detected:', code.data);
                 scannedData = code.data;
                 handleQRDetection(code.data);
+                // Don't continue loop after detection
             } else {
+                // No QR code found, continue scanning
                 requestAnimationFrame(scanQR);
             }
         }
