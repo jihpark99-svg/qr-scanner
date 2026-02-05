@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR 코드 스캐너 & 생성기</title>
+    <meta name="description" content="모던 웹 기반 QR 코드 스캐너 및 생성기 - 카메라로 스캔하고, 커스텀 QR 코드 생성">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0f0f0f;
+            --bg-secondary: #1a1a1a;
+            --bg-card: rgba(30, 30, 30, 0.8);
+            --accent-primary: #6366f1;
+            --accent-secondary: #8b5cf6;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --success: #2cc985;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a2e 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 30px 0;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            -webkit-text-fill-color: var(--text-secondary);
+        }
+
+        /* Tab System */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            background: var(--bg-card);
+            padding: 10px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 15px 30px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .tab-button:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+        }
+
+        .tab-button.active {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Glass Card Effect */
+        .glass-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            padding: 30px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+        }
+
+        /* Scanner Tab */
+        .video-container {
+            position: relative;
+            width: 100%;
+            max-width: 640px;
+            height: 480px;
+            margin: 0 auto 20px;
+            background: var(--bg-secondary);
+            border-radius: 15px;
+            overflow: hidden;
+            border: 2px solid var(--border-color);
+        }
+
+        #video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .control-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .switch-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #4a4a4a;
+            transition: 0.3s;
+            border-radius: 26px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: var(--success);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(24px);
+        }
+
+        .status-badge {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .result-area {
+            text-align: center;
+            padding: 30px;
+            min-height: 150px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 15px;
+            border: 1px dashed var(--border-color);
+        }
+
+        .result-text {
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            word-wrap: break-word;
+            color: var(--text-primary);
+        }
+
+        .result-text.success {
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        /* Generator Tab */
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .form-input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .options-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .color-picker-wrapper {
+            position: relative;
+            flex: 1;
+        }
+
+        input[type="color"] {
+            width: 100%;
+            height: 50px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            background: transparent;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-upload-label {
+            display: inline-block;
+            padding: 15px 25px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .file-upload-label:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent-primary);
+        }
+
+        .file-upload-label.active {
+            background: var(--success);
+            border-color: var(--success);
+        }
+
+        .preview-container {
+            width: 100%;
+            max-width: 400px;
+            height: 400px;
+            margin: 30px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 15px;
+            border: 2px dashed var(--border-color);
+        }
+
+        #qrPreview {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 10px;
+        }
+
+        .preview-placeholder {
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 15px 35px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(44, 201, 133, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn-full {
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+            display: block;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2rem;
+            }
+
+            .video-container {
+                height: 300px;
+            }
+
+            .control-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .options-row {
+                flex-direction: column;
+            }
+
+            .tab-button {
+                padding: 12px 20px;
+                font-size: 0.9rem;
+            }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-primary);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-secondary);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>🔲 QR 코드 스캐너 & 생성기</h1>
+            <p>Advanced QR Scanner & Generator</p>
+        </header>
+
+        <!-- Tabs -->
+        <div class="tabs" role="tablist">
+            <button class="tab-button active" role="tab" aria-selected="true" onclick="switchTab('scanner', event)">📷
+                스캔 (Scan)</button>
+            <button class="tab-button" role="tab" aria-selected="false" onclick="switchTab('generator', event)">✨ 생성
+                (Create)</button>
+        </div>
+
+        <!-- Scanner Tab -->
+        <div id="scanner" class="tab-content active">
+            <div class="glass-card">
+                <div class="control-bar">
+                    <div class="switch-container">
+                        <span>자동 열기</span>
+                        <label class="switch">
+                            <input type="checkbox" id="autoOpen" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="status-badge" id="scanStatus">스캔 준비 완료</div>
+                </div>
+
+                <div class="video-container">
+                    <video id="video" autoplay playsinline></video>
+                    <canvas id="canvas" style="display: none;"></canvas>
+                    <div class="video-overlay" id="videoOverlay">
+                        <p>카메라 접근 중...</p>
+                    </div>
+                </div>
+
+                <div class="result-area">
+                    <div class="result-text" id="resultText">스캔 중...</div>
+                    <div class="action-buttons">
+                        <button class="btn btn-secondary" id="copyBtn" onclick="copyToClipboard()" disabled>📋 내용
+                            복사</button>
+                        <button class="btn btn-success" id="openBtn" onclick="openLink()" disabled>🔗 링크 열기</button>
+                        <button class="btn btn-secondary" id="resumeBtn" onclick="resumeScanning()" disabled>🔄 다시
+                            스캔</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Generator Tab -->
+        <div id="generator" class="tab-content">
+            <div class="glass-card">
+                <div class="form-group">
+                    <label class="form-label">QR 코드 내용 입력</label>
+                    <input type="text" class="form-input" id="qrInput" placeholder="https://example.com or any text...">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">옵션</label>
+                    <div class="options-row">
+                        <div class="color-picker-wrapper">
+                            <label class="form-label" style="font-size: 0.9rem;">색상 선택 (Color)</label>
+                            <input type="color" id="qrColor" value="#000000">
+                        </div>
+                        <div>
+                            <label class="form-label" style="font-size: 0.9rem;">로고 추가 (Logo)</label>
+                            <input type="file" id="logoInput" accept="image/*" onchange="handleLogoUpload(event)">
+                            <label for="logoInput" class="file-upload-label" id="logoLabel">📁 파일 선택</label>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary btn-full" onclick="generateQR()">✨ QR 코드 생성하기</button>
+
+                <div class="preview-container" id="previewContainer">
+                    <div class="preview-placeholder" id="previewPlaceholder">
+                        <p>📱</p>
+                        <p>내용을 입력하고 생성 버튼을 누르세요</p>
+                    </div>
+                    <img id="qrPreview" style="display: none;">
+                </div>
+
+                <button class="btn btn-success btn-full" id="saveBtn" onclick="saveQR()" disabled>💾 이미지 저장</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- jsQR Library for QR Detection -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    <!-- QRCode.js Library for QR Generation -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+
+    <script>
+        // Global Variables
+        let video = document.getElementById('video');
+        let canvas = document.getElementById('canvas');
+        let ctx = canvas.getContext('2d');
+        let scanning = true;
+        let scannedData = null;
+        let logoImage = null;
+        let generatedQRDataUrl = null;
+
+        // Tab Switching
+        function switchTab(tab, event) {
+            const tabs = document.querySelectorAll('.tab-content');
+            const buttons = document.querySelectorAll('.tab-button');
+
+            tabs.forEach(t => t.classList.remove('active'));
+            buttons.forEach(b => {
+                b.classList.remove('active');
+                b.setAttribute('aria-selected', 'false');
+            });
+
+            document.getElementById(tab).classList.add('active');
+            event.target.classList.add('active');
+            event.target.setAttribute('aria-selected', 'true');
+
+            // Pause camera when not in scanner tab
+            if (tab === 'scanner') {
+                startCamera();
+            } else {
+                stopCamera();
+            }
+        }
+
+        // Scanner Functions
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment' }
+                });
+                video.srcObject = stream;
+                document.getElementById('videoOverlay').style.display = 'none';
+                requestAnimationFrame(scanQR);
+            } catch (err) {
+                console.error('Camera Error:', err);
+                document.getElementById('videoOverlay').innerHTML = '<p>⚠️ 카메라 접근 실패<br>권한을 확인해주세요</p>';
+            }
+        }
+
+        function stopCamera() {
+            if (video.srcObject) {
+                video.srcObject.getTracks().forEach(track => track.stop());
+                video.srcObject = null;
+            }
+        }
+
+        function scanQR() {
+            if (!scanning || video.readyState !== video.HAVE_ENOUGH_DATA) {
+                requestAnimationFrame(scanQR);
+                return;
+            }
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+            if (code) {
+                scannedData = code.data;
+                handleQRDetection(code.data);
+            } else {
+                requestAnimationFrame(scanQR);
+            }
+        }
+
+        function handleQRDetection(data) {
+            scanning = false;
+
+            document.getElementById('resultText').textContent = `감지됨: ${data}`;
+            document.getElementById('resultText').classList.add('success');
+            document.getElementById('scanStatus').textContent = '스캔 일시 중지됨';
+
+            document.getElementById('copyBtn').disabled = false;
+            document.getElementById('resumeBtn').disabled = false;
+
+            // Auto copy
+            copyToClipboard();
+
+            // Check if URL and enable open button
+            if (data.startsWith('http')) {
+                document.getElementById('openBtn').textContent = '🔗 링크 열기';
+                document.getElementById('openBtn').disabled = false;
+
+                // Auto open if enabled
+                if (document.getElementById('autoOpen').checked) {
+                    setTimeout(() => openLink(), 500);
+                }
+            } else {
+                document.getElementById('openBtn').textContent = '📤 공유';
+                document.getElementById('openBtn').disabled = false;
+            }
+        }
+
+        function copyToClipboard() {
+            if (scannedData) {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(scannedData)
+                        .then(() => {
+                            document.getElementById('scanStatus').textContent = '✅ 클립보드에 복사됨!';
+                            setTimeout(() => {
+                                if (!scanning) {
+                                    document.getElementById('scanStatus').textContent = '스캔 일시 중지됨';
+                                }
+                            }, 2000);
+                        })
+                        .catch((err) => {
+                            console.error('Clipboard error:', err);
+                            // Fallback: show data in alert if clipboard fails
+                            alert('클립보드 복사 실패. 데이터: ' + scannedData);
+                        });
+                } else {
+                    // Fallback for older browsers
+                    alert('복사할 내용: ' + scannedData);
+                }
+            }
+        }
+
+        function openLink() {
+            if (scannedData) {
+                if (scannedData.startsWith('http')) {
+                    window.open(scannedData, '_blank');
+                } else {
+                    // For non-URLs, copy to clipboard
+                    copyToClipboard();
+                }
+            }
+        }
+
+        function resumeScanning() {
+            scannedData = null;
+            scanning = true;
+
+            document.getElementById('resultText').textContent = '스캔 중...';
+            document.getElementById('resultText').classList.remove('success');
+            document.getElementById('scanStatus').textContent = '스캔 진행 중';
+
+            document.getElementById('copyBtn').disabled = true;
+            document.getElementById('openBtn').disabled = true;
+            document.getElementById('resumeBtn').disabled = true;
+
+            requestAnimationFrame(scanQR);
+        }
+
+        // Generator Functions
+        function handleLogoUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                // Validate file size (max 5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('파일 크기가 너무 큽니다. 5MB 이하의 이미지를 선택해주세요.');
+                    event.target.value = ''; // Reset input
+                    return;
+                }
+
+                // Validate file type
+                if (!file.type.startsWith('image/')) {
+                    alert('이미지 파일만 선택 가능합니다.');
+                    event.target.value = '';
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    logoImage = new Image();
+                    logoImage.src = e.target.result;
+                    document.getElementById('logoLabel').textContent = '✅ 로고 선택됨';
+                    document.getElementById('logoLabel').classList.add('active');
+                };
+                reader.onerror = function () {
+                    alert('이미지 로딩 중 오류가 발생했습니다.');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        async function generateQR() {
+            const text = document.getElementById('qrInput').value.trim();
+            if (!text) {
+                alert('내용을 입력해주세요!');
+                return;
+            }
+
+            // Input validation: max length 1000 characters
+            if (text.length > 1000) {
+                alert('내용이 너무 깁니다. 1000자 이하로 입력해주세요.');
+                return;
+            }
+
+            const color = document.getElementById('qrColor').value;
+
+            // Show loading state
+            const generateBtn = event.target;
+            const originalText = generateBtn.textContent;
+            generateBtn.disabled = true;
+            generateBtn.textContent = '⏳ 생성 중...';
+            document.getElementById('previewPlaceholder').innerHTML = '<p>⏳</p><p>QR 코드 생성 중...</p>';
+
+            try {
+                // Generate QR code
+                const qrCanvas = document.createElement('canvas');
+                await QRCode.toCanvas(qrCanvas, text, {
+                    width: 400,
+                    margin: 2,
+                    color: {
+                        dark: color,
+                        light: '#ffffff'
+                    },
+                    errorCorrectionLevel: 'H'
+                });
+
+                // If logo exists, add it to the center
+                if (logoImage) {
+                    const ctx = qrCanvas.getContext('2d');
+                    const logoSize = qrCanvas.width * 0.2;
+                    const x = (qrCanvas.width - logoSize) / 2;
+                    const y = (qrCanvas.height - logoSize) / 2;
+
+                    // Draw white background for logo
+                    ctx.fillStyle = 'white';
+                    ctx.fillRect(x - 5, y - 5, logoSize + 10, logoSize + 10);
+
+                    // Draw logo
+                    ctx.drawImage(logoImage, x, y, logoSize, logoSize);
+                }
+
+                // Convert to data URL and display
+                generatedQRDataUrl = qrCanvas.toDataURL('image/png');
+                const preview = document.getElementById('qrPreview');
+                preview.src = generatedQRDataUrl;
+                preview.style.display = 'block';
+                document.getElementById('previewPlaceholder').style.display = 'none';
+                document.getElementById('saveBtn').disabled = false;
+
+            } catch (error) {
+                console.error('QR Generation Error:', error);
+                alert('QR 코드 생성 중 오류가 발생했습니다.');
+                document.getElementById('previewPlaceholder').innerHTML = '<p>📱</p><p>내용을 입력하고 생성 버튼을 누르세요</p>';
+            } finally {
+                // Reset button state
+                const generateBtn = document.querySelector('.btn-primary');
+                generateBtn.disabled = false;
+                generateBtn.textContent = '✨ QR 코드 생성하기';
+            }
+        }
+
+        function saveQR() {
+            if (generatedQRDataUrl) {
+                const link = document.createElement('a');
+                link.download = 'qrcode.png';
+                link.href = generatedQRDataUrl;
+                link.click();
+            }
+        }
+
+        // Initialize
+        window.addEventListener('load', () => {
+            startCamera();
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            stopCamera();
+        });
+    </script>
+</body>
+
+</html>

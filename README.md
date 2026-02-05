@@ -1,10 +1,48 @@
 # 📷 Smart QR Code Scanner Project
 
-이 프로젝트는 **Python (데스크탑용)**과 **Kotlin (안드로이드용)** 두 가지 버전의 QR 코드 스캐너 구현체를 포함하고 있습니다. 현재 주력으로 개발된 버전은 **Python 버전**입니다.
+이 프로젝트는 **웹 애플리케이션 (메인)**, **Python (데스크탑용)**, **Kotlin (안드로이드용)** 세 가지 버전의 QR 코드 스캐너 구현체를 포함하고 있습니다.
 
 ---
 
-## 🐍 1. Python Desktop Version (Main)
+## 🌐 0. Web Application Version (Main) ⭐
+
+**브라우저에서 바로 실행 가능한 모던 QR 스캐너 & 생성기**
+
+### ✨ 주요 기능 (Key Features)
+- **📷 실시간 QR 스캔**: WebRTC를 통한 카메라 접근으로 실시간 QR 코드 인식
+- **✨ 커스텀 QR 생성**: 색상 변경 및 로고 삽입 지원
+- **🎨 프리미엄 디자인**: 다크 테마 + Glassmorphism 효과
+- **📱 완벽한 반응형**: 모바일, 태블릿, 데스크톱 모든 기기 지원
+- **⚡ 자동 기능**: 자동 클립보드 복사, URL 자동 열기
+- **🔒 보안**: HTTPS 기반 카메라 접근
+
+### 🚀 빠른 시작
+1. **로컬 테스트**:
+   ```bash
+   # 간단한 HTTP 서버 실행
+   python -m http.server 8000
+   # 브라우저에서 http://localhost:8000 접속
+   ```
+
+2. **Vercel 배포** (추천):
+   - [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) 가이드 참조
+   - GitHub 저장소와 Vercel 연동
+   - 자동 HTTPS 제공 및 글로벌 CDN
+
+### 🌍 라이브 데모
+> 배포 후 URL을 여기에 추가하세요
+
+### 🌐 브라우저 호환성
+- ✅ Chrome/Edge (권장)
+- ✅ Firefox
+- ✅ Safari (iOS 11.3+)
+- ✅ 모바일 브라우저
+
+
+
+---
+
+## 🐍 1. Python Desktop Version (Reference)
 
 최신 라이브러리를 활용하여 개발된 고성능 윈도우 데스크탑용 QR 스캐너입니다.
 
