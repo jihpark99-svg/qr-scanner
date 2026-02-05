@@ -726,21 +726,19 @@
                     const ctx = finalCanvas.getContext('2d');
                     ctx.drawImage(sourceCanvas, 0, 0);
 
-                    // Temporarily disabled logo for testing
-                    /*
+                    // Logo overlay (small size for better scanning)
                     if (this.logoImage && this.logoImage.complete) {
-                        const logoWidth = 100;  // Reduced for better scanning
-                        const logoHeight = 100; // Square logo for reliability
+                        const logoWidth = 60;   // Small size for reliability
+                        const logoHeight = 60;  // Square logo
                         const x = (400 - logoWidth) / 2;
                         const y = (400 - logoHeight) / 2;
 
                         // White background for logo
                         ctx.fillStyle = 'white';
-                        ctx.fillRect(x - 5, y - 5, logoWidth + 10, logoHeight + 10);
+                        ctx.fillRect(x - 4, y - 4, logoWidth + 8, logoHeight + 8);
 
                         ctx.drawImage(this.logoImage, x, y, logoWidth, logoHeight);
                     }
-                    */
 
                     this.generatedQRDataUrl = finalCanvas.toDataURL('image/png');
                     const preview = document.getElementById('qrPreview');
