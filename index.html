@@ -726,10 +726,10 @@
                     const ctx = finalCanvas.getContext('2d');
                     ctx.drawImage(sourceCanvas, 0, 0);
 
-                    // Logo overlay (small size for better scanning)
+                    // Logo overlay (optimized size for scanning + visibility)
                     if (this.logoImage && this.logoImage.complete) {
-                        const logoWidth = 80;   // Increased for better visibility
-                        const logoHeight = 80;  // Square logo
+                        const logoWidth = 70;   // Balanced size for visibility and scanning
+                        const logoHeight = 70;  // Square logo
                         const x = (400 - logoWidth) / 2;
                         const y = (400 - logoHeight) / 2;
 
