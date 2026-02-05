@@ -4,12 +4,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Smart QR 스캐너</title>
+    <title>Smart QR 스캐너 & 생성기</title>
 
-    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 
     <style>
         :root {
@@ -57,7 +59,6 @@
             display: flex;
             flex-direction: column;
             height: 90vh;
-            /* Mobile app feel */
             max-height: 800px;
         }
 
@@ -66,6 +67,7 @@
             display: flex;
             background: rgba(0, 0, 0, 0.2);
             padding: 4px;
+            flex-shrink: 0;
         }
 
         .tab-button {
@@ -99,18 +101,13 @@
         }
 
         /* Content Area */
-        .content {
-            flex: 1;
-            padding: 24px;
-            overflow-y: auto;
-            position: relative;
-        }
-
         .tab-content {
             display: none;
-            height: 100%;
+            flex: 1;
             flex-direction: column;
             animation: fadeIn 0.3s ease;
+            padding: 24px;
+            overflow-y: auto;
         }
 
         .tab-content.active {
@@ -129,12 +126,7 @@
             }
         }
 
-        /* Scanner */
-        #scanner {
-            align-items: center;
-            justify-content: center;
-        }
-
+        /* Scanner UI */
         .scan-area-wrapper {
             position: relative;
             width: 100%;
@@ -145,6 +137,7 @@
             overflow: hidden;
             background: #000;
             box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+            flex-shrink: 0;
         }
 
         video {
@@ -197,6 +190,9 @@
             line-height: 1.5;
             color: var(--text-secondary);
             min-height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         #resultText.success {
@@ -204,7 +200,6 @@
             font-weight: 500;
         }
 
-        /* Buttons */
         /* Buttons */
         .btn-group {
             display: flex;
@@ -225,12 +220,13 @@
             justify-content: center;
             gap: 6px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            color: white;
+            font-size: 14px;
         }
 
         .btn:hover {
             transform: translateY(-2px);
             filter: brightness(1.1);
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
         }
 
         .btn:active {
@@ -241,29 +237,19 @@
             opacity: 0.5;
             cursor: not-allowed;
             transform: none;
-            box-shadow: none;
         }
 
         .btn-primary {
             background: var(--primary-color);
-            color: white;
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
         }
 
         .btn-secondary {
             background: rgba(255, 255, 255, 0.15);
-            /* Brighter for visibility */
-            color: white;
             border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.25);
         }
 
         .btn-success {
             background: #10b981;
-            color: white;
         }
 
         .btn-full {
@@ -271,9 +257,10 @@
             margin-top: 10px;
         }
 
-        /* Generator Compact Layout */
+        /* Generator Inputs */
         .input-group {
             margin-bottom: 12px;
+            flex-shrink: 0;
         }
 
         label {
@@ -318,14 +305,8 @@
             right: 0;
             min-width: 100%;
             min-height: 100%;
-            font-size: 100px;
-            text-align: right;
-            filter: alpha(opacity=0);
             opacity: 0;
-            outline: none;
-            background: white;
-            cursor: inherit;
-            display: block;
+            cursor: pointer;
         }
 
         .file-upload-label {
@@ -353,6 +334,7 @@
             background: rgba(16, 185, 129, 0.1);
         }
 
+        /* Preview Area */
         .preview-area {
             background: white;
             border-radius: 16px;
@@ -360,19 +342,17 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 180px;
+            min-height: 200px;
             margin-bottom: 12px;
+            flex-shrink: 0;
         }
 
         #qrPreview {
             max-width: 100%;
-            max-height: 200px;
-            /* Reduced height */
-            width: auto;
+            max-height: 250px;
             height: auto;
             object-fit: contain;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
+            border-radius: 4px;
         }
 
         .placeholder {
@@ -393,35 +373,29 @@
             display: flex;
             gap: 10px;
             margin-top: 10px;
+            flex-shrink: 0;
         }
 
-        /* Footer */
         .footer {
             padding: 16px;
             text-align: center;
             font-size: 12px;
             color: rgba(255, 255, 255, 0.3);
             border-top: 1px solid rgba(255, 255, 255, 0.05);
+            margin-top: auto;
+            flex-shrink: 0;
         }
     </style>
-
-    <!-- External Libraries (CDN) -->
-    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 
 <body>
 
     <div class="container">
-        <!-- Tabs -->
         <div class="tabs" role="tablist">
-            <button class="tab-button active" onclick="switchTab('scanner', event)" role="tab"
-                aria-selected="true">스캔</button>
-            <button class="tab-button" onclick="switchTab('generator', event)" role="tab"
-                aria-selected="false">생성</button>
+            <button class="tab-button active" onclick="switchTab('scanner', event)" role="tab">스캔</button>
+            <button class="tab-button" onclick="switchTab('generator', event)" role="tab">생성</button>
         </div>
 
-        <!-- Scanner Tab -->
         <div id="scanner" class="tab-content active" role="tabpanel">
             <div class="scan-area-wrapper">
                 <video id="video" playsinline></video>
@@ -439,13 +413,11 @@
                     <button class="btn btn-secondary" id="copyBtn" disabled>📋 복사</button>
                     <button class="btn btn-primary" id="openBtn" disabled>🔗 열기</button>
                 </div>
-                <!-- Resume Button (Hidden by default, shown when paused) -->
                 <button class="btn btn-success btn-full" id="resumeBtn" style="display:none;" disabled>▶ 다시
                     스캔하기</button>
             </div>
         </div>
 
-        <!-- Generator Tab -->
         <div id="generator" class="tab-content" role="tabpanel">
             <div class="input-group">
                 <label>내용 입력</label>
@@ -476,7 +448,6 @@
                 <img id="qrPreview" style="display: none;">
             </div>
 
-            <!-- Compact Action Buttons -->
             <div class="action-row">
                 <button class="btn btn-primary" onclick="app.generator.generate()">✨ 생성</button>
                 <button class="btn btn-secondary" id="resetBtn">🔄 초기화</button>
@@ -490,27 +461,25 @@
         </div>
     </div>
 
-    <!-- Application Logic -->
     <script>
         // --- QRScanner Class ---
         class QRScanner {
             constructor() {
                 this.video = document.getElementById('video');
-                this.canvas = document.createElement('canvas'); // Off-screen canvas
+                this.canvas = document.createElement('canvas');
                 this.ctx = this.canvas.getContext('2d');
                 this.scanning = false;
                 this.currentStream = null;
                 this.lastScanTime = 0;
-                this.scanInterval = 50; // 20 FPS for faster response (was 100ms/10 FPS)
-
+                this.scanInterval = 50;
                 this.scanLoop = this.scanLoop.bind(this);
             }
 
             async start() {
                 if (this.scanning) return;
 
-                if (window.isSecureContext === false) {
-                    this.showError('⚠️ 카메라 접근 불가: 보안 컨텍스트(HTTPS 또는 localhost)가 필요합니다.');
+                if (window.isSecureContext === false && window.location.hostname !== 'localhost') {
+                    this.showError('⚠️ 카메라 접근 불가: HTTPS 연결이 필요합니다.');
                     return;
                 }
 
@@ -521,7 +490,7 @@
                     });
                     this.currentStream = stream;
                     this.video.srcObject = stream;
-                    this.video.setAttribute("playsinline", true); // required for iOS
+                    this.video.setAttribute("playsinline", true);
 
                     const playPromise = this.video.play();
                     if (playPromise !== undefined) {
@@ -535,8 +504,6 @@
                         document.getElementById('resultText').classList.remove('success');
 
                         this.scanning = true;
-
-                        // Disable buttons
                         document.getElementById('copyBtn').disabled = true;
                         document.getElementById('openBtn').disabled = true;
                         document.getElementById('resumeBtn').style.display = 'none';
@@ -581,7 +548,7 @@
 
                     if (typeof jsQR !== 'undefined') {
                         const code = jsQR(imageData.data, imageData.width, imageData.height, {
-                            inversionAttempts: "dontInvert",
+                            inversionAttempts: "attemptBoth",
                         });
 
                         if (code) {
@@ -598,9 +565,7 @@
             }
 
             handleDetection(data) {
-                this.scanning = false; // Pause scanning
-                // Beep sound could be added here
-
+                this.scanning = false;
                 document.getElementById('scanStatus').textContent = '✅ 스캔 완료';
                 const resText = document.getElementById('resultText');
                 resText.textContent = data;
@@ -613,18 +578,16 @@
                 resumeBtn.style.display = 'block';
                 resumeBtn.disabled = false;
 
-                // Auto copy
                 this.copyToClipboard(data);
-
-                // Auto open if URL (optional, maybe unsafe to auto-open)
             }
 
             copyToClipboard(text) {
                 const content = text || document.getElementById('resultText').textContent;
                 navigator.clipboard.writeText(content).then(() => {
-                    const originalText = document.getElementById('copyBtn').innerHTML;
-                    document.getElementById('copyBtn').innerHTML = '✅ 복사됨';
-                    setTimeout(() => document.getElementById('copyBtn').innerHTML = originalText, 2000);
+                    const btn = document.getElementById('copyBtn');
+                    const originalText = btn.innerHTML;
+                    btn.innerHTML = '✅ 복사됨';
+                    setTimeout(() => btn.innerHTML = originalText, 2000);
                 });
             }
 
@@ -673,8 +636,10 @@
                     reader.onload = (e) => {
                         this.logoImage = new Image();
                         this.logoImage.src = e.target.result;
-                        document.getElementById('logoLabel').textContent = '✅ 로고 선택됨';
-                        document.getElementById('logoLabel').classList.add('active');
+                        this.logoImage.onload = () => {
+                            document.getElementById('logoLabel').textContent = '✅ 로고 선택됨';
+                            document.getElementById('logoLabel').classList.add('active');
+                        };
                     };
                     reader.readAsDataURL(file);
                 }
@@ -683,63 +648,63 @@
             async generate() {
                 const text = document.getElementById('qrInput').value.trim();
                 if (!text) { alert('내용을 입력해주세요!'); return; }
-                if (text.length > 1000) { alert('내용이 너무 깁니다.'); return; }
 
                 const color = document.getElementById('qrColor').value;
                 document.getElementById('previewPlaceholder').innerHTML = '<p>⏳</p><p>생성 중...</p>';
 
                 try {
-                    if (typeof QRCode === 'undefined') throw new Error('QRCode 라이브러리 없음');
+                    if (typeof QRCode === 'undefined') {
+                        throw new Error('QR 라이브러리 로드 실패. 인터넷 연결을 확인하세요.');
+                    }
 
-                    const tempDiv = document.createElement('div');
-                    const qr = new QRCode(tempDiv, {
-                        text: text,
+                    // 1. QR 코드 생성
+                    const qrCanvas = document.createElement('canvas');
+
+                    await QRCode.toCanvas(qrCanvas, text, {
                         width: 400,
-                        height: 400,
-                        colorDark: color,
-                        colorLight: "#ffffff",
-                        correctLevel: QRCode.CorrectLevel.M  // Changed from H to M for better scanning
+                        margin: 0,
+                        color: {
+                            dark: color,
+                            light: '#ffffff'
+                        },
+                        // 로고가 있으면 에러 복원율을 최대로 높임 (가장 중요)
+                        errorCorrectionLevel: this.logoImage ? 'H' : 'M'
                     });
 
-                    // Render polling
-                    let sourceCanvas = null;
-                    let attempts = 0;
-                    while (attempts < 20) {
-                        await new Promise(r => setTimeout(r, 50));
-                        sourceCanvas = tempDiv.querySelector('canvas');
-                        if (sourceCanvas) break;
-                        const img = tempDiv.querySelector('img');
-                        if (img && img.src && img.complete && img.naturalWidth > 0) {
-                            sourceCanvas = document.createElement('canvas');
-                            sourceCanvas.width = 400; sourceCanvas.height = 400;
-                            sourceCanvas.getContext('2d').drawImage(img, 0, 0, 400, 400);
-                            break;
-                        }
-                        attempts++;
-                    }
+                    // 2. 최종 합성을 위한 캔버스 (여백 30px 추가)
+                    const padding = 30;
+                    const finalSize = 400 + (padding * 2);
 
-                    if (!sourceCanvas) throw new Error('렌더링 실패');
-
-                    // Final canvas with logo
                     const finalCanvas = document.createElement('canvas');
-                    finalCanvas.width = 400; finalCanvas.height = 400;
+                    finalCanvas.width = finalSize;
+                    finalCanvas.height = finalSize;
                     const ctx = finalCanvas.getContext('2d');
-                    ctx.drawImage(sourceCanvas, 0, 0);
 
-                    // Logo overlay (optimized size for scanning + visibility)
-                    if (this.logoImage && this.logoImage.complete) {
-                        const logoWidth = 60;   // Proven reliable size for scanning
-                        const logoHeight = 60;  // Square logo
-                        const x = (400 - logoWidth) / 2;
-                        const y = (400 - logoHeight) / 2;
+                    // 흰색 배경
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, finalSize, finalSize);
 
-                        // White background for logo
-                        ctx.fillStyle = 'white';
-                        ctx.fillRect(x - 4, y - 4, logoWidth + 8, logoHeight + 8);
+                    // QR 코드 그리기
+                    ctx.drawImage(qrCanvas, padding, padding);
 
-                        ctx.drawImage(this.logoImage, x, y, logoWidth, logoHeight);
+                    // 3. 로고 합성 (크기 조정: 100px)
+                    if (this.logoImage && this.logoImage.complete && this.logoImage.naturalWidth > 0) {
+                        // 안정적인 인식을 위한 최적 크기 (100px)
+                        // 120px은 데이터 손실이 많아 인식이 잘 안됨
+                        const logoSize = 100;
+
+                        const x = (finalSize - logoSize) / 2;
+                        const y = (finalSize - logoSize) / 2;
+
+                        // 로고 뒤 흰색 박스 (테두리 5px)
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(x - 5, y - 5, logoSize + 10, logoSize + 10);
+
+                        // 로고 그리기
+                        ctx.drawImage(this.logoImage, x, y, logoSize, logoSize);
                     }
 
+                    // 4. 결과 출력
                     this.generatedQRDataUrl = finalCanvas.toDataURL('image/png');
                     const preview = document.getElementById('qrPreview');
                     preview.src = this.generatedQRDataUrl;
@@ -749,7 +714,7 @@
 
                 } catch (err) {
                     console.error(err);
-                    alert('오류: ' + err.message);
+                    alert('오류 발생: ' + err.message);
                     document.getElementById('previewPlaceholder').innerHTML = '<p>📱</p><p>다시 시도해주세요</p>';
                 }
             }
@@ -757,7 +722,7 @@
             save() {
                 if (this.generatedQRDataUrl) {
                     const link = document.createElement('a');
-                    link.download = 'qrcode.png';
+                    link.download = `qrcode_${Date.now()}.png`;
                     link.href = this.generatedQRDataUrl;
                     link.click();
                 }
@@ -790,21 +755,17 @@
             }
 
             initEvents() {
-                // Global Switch
                 window.switchTab = (tab, event) => this.switchTab(tab, event);
 
-                // Scanner bindings
                 document.getElementById('copyBtn').onclick = () => this.scanner.copyToClipboard();
                 document.getElementById('openBtn').onclick = () => this.scanner.openLink();
                 document.getElementById('resumeBtn').onclick = () => this.scanner.resume();
 
-                // Generator bindings
                 document.getElementById('logoInput').onchange = (e) => this.generator.handleLogoUpload(e);
                 document.querySelector('#generator .btn-primary').onclick = () => this.generator.generate();
                 document.getElementById('saveBtn').onclick = () => this.generator.save();
                 document.getElementById('resetBtn').onclick = () => this.generator.reset();
 
-                // Auto start if needed
                 if (document.querySelector('.tab-content.active').id === 'scanner') {
                     this.scanner.start();
                 }
@@ -822,7 +783,6 @@
             }
         }
 
-        // Run
         document.addEventListener('DOMContentLoaded', () => {
             window.app = new App();
         });
